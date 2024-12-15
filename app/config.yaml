@@ -16,10 +16,10 @@ training:
 
 # File paths
 paths:
-  image_dir: "images"
-  cascade_file: "haarcascade_frontalface_default.xml"
-  names_file: "names.json"
-  trainer_file: "trainer.yml" 
+  cascade_file: "cascade.xml"
+  image_dir: "../data/images"
+  names_file: "../data/names.json"
+  trainer_file: "trainer.yml" # TO BE REMOVED
 
 # Confidence threshold
-confidence_threshold: 40
+confidence_threshold: 40 # TO BE REMOVED MAYBE
