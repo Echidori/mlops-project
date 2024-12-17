@@ -1,15 +1,18 @@
 # Suppress macOS warning
 import warnings
 
-import torch
-
 warnings.filterwarnings('ignore', category=UserWarning)
 
 import cv2
 import json
-import os
 import logging
-from app.config import CAMERA, FACE_DETECTION, PATHS
+import torch
+from config import CAMERA, FACE_DETECTION, PATHS
+import numpy as np
+import json
+
+
+from cnn import Net
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -47,47 +50,62 @@ def load_names(filename: str) -> dict:
         dict: Dictionary mapping IDs to names
     """
     try:
-        names_json = {}
-        if os.path.exists(filename):
-            with open(filename, 'r') as fs:
-                content = fs.read().strip()
-                if content:
-                    names_json = json.loads(content)
-        return names_json
+        with open(filename, 'r') as f:
+            names = json.load(f)
+        return names
     except Exception as e:
         logger.error(f"Error loading names: {e}")
+        return {}
+    
+def load_label_map(filename: str) -> dict:
+    try:
+        with open(filename, 'r') as f:
+            index_to_label = json.load(f)
+        # Convert keys back to integers
+        index_to_label = {int(k): int(v) for k, v in index_to_label.items()}
+        return index_to_label
+    except Exception as e:
+        logger.error(f"Error loading label map: {e}")
         return {}
 
 if __name__ == "__main__":
     try:
         logger.info("Starting face recognition system...")
-        
-        # Initialize face recognizer
-        #recognizer = cv2.face.LBPHFaceRecognizer_create()
 
-        model = torch.load("cnn_model.pth")
+        # Load the entire model
+        model = torch.load("cnn_model.pth", weights_only=False)
         model.eval()
 
-        if not os.path.exists(PATHS['trainer_file']):
-            raise ValueError("Trainer file not found. Please train the model first.")
-        #recognizer.read(PATHS['trainer_file'])
-        
+        logger.info("Model loaded successfully.")
+
+        logger.info(f"{PATHS['cascade_file']}")
+
         # Load face cascade classifier
         face_cascade = cv2.CascadeClassifier(PATHS['cascade_file'])
         if face_cascade.empty():
             raise ValueError("Error loading cascade classifier")
-        
+
         # Initialize camera
         cam = initialize_camera(CAMERA['index'])
         if cam is None:
             raise ValueError("Failed to initialize camera")
-        
+
         # Load names
         names = load_names(PATHS['names_file'])
         if not names:
             logger.warning("No names loaded, recognition will be limited")
-        
+
+        index_to_label = load_label_map("../data/index_to_label.json")
+
+        # Create label map: index (from model output) -> name
+        label_map = {}
+        for idx, face_id in index_to_label.items():
+            name = names.get(str(face_id), "Unknown")
+            label_map[idx] = name
+
+
         logger.info("Face recognition started. Press 'ESC' to exit.")
+
         
         while True:
             ret, img = cam.read()
@@ -96,6 +114,7 @@ if __name__ == "__main__":
                 continue
             
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
             faces = face_cascade.detectMultiScale(
                 gray,
                 scaleFactor=FACE_DETECTION['scale_factor'],
@@ -111,20 +130,24 @@ if __name__ == "__main__":
 
                 face_img = gray[y:y+h, x:x+w]
                 face_img = cv2.resize(face_img, (50, 50))
+                face_img = face_img.astype(np.float32) / 255.0
+                face_img = face_img.reshape(1, 1, 50, 50)  # Reshape to match the input shape
 
-                id = model.predict(face_img.flatten())
+                input_tensor = torch.from_numpy(face_img)
 
-                label = model.convert_prediction_to_label(id, names)
+                # Make prediction
+                with torch.no_grad():
+                    outputs = model(input_tensor)
+                    _, predicted = torch.max(outputs.data, 1)
+                    predicted_idx = predicted.item()
 
-                # Check confidence and display result
-                name = label[0]
-                confidence_text = "N/A"
+                name = label_map.get(predicted_idx, "Unknown")
                 
                 # Display name and confidence
                 cv2.putText(img, name, (x+5, y-5), 
                            cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-                cv2.putText(img, confidence_text, (x+5, y+h-5), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 1)
+                """cv2.putText(img, confidence_text, (x+5, y+h-5), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 1)"""
             
             cv2.imshow('Face Recognition', img)
             
