@@ -1,0 +1,29 @@
+name: Docker deploy
+
+on:
+  push:
+    branches:
+      - main
+      - feat/pipeline
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v2
+      - name: Build Docker image
+        run: docker build -t mlops-project:latest .
+      - name: Login to Docker
+        run: docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: Tag Docker image
+        run: docker tag mlops-project-1:latest ${{ secrets.DOCKER_HUB_USERNAME }}/mlops-project-1:latest
+      - name: Push to Docker Hub
+        run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/mlops-project-1:latest
+      - name: Connect to the server
+        run: |
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh ubuntu@${{ secrets.SSH_HOST }} -o StrictHostKeyChecking=no << 'EOF'
+            if [ ! -d "/home/ubuntu/${{ secrets.MODEL_DIRECTORY }}" ]; then
+              mkdir /home/ubuntu/${{ secrets.MODEL_DIRECTORY }}
+            fi
+            cd /home/ubuntu/${{ secrets.MODEL_DIRECTORY }}
+          EOF
