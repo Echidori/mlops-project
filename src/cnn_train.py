@@ -55,13 +55,13 @@ def load_images_and_labels():
 
 def save_onnx_model(model, version):
     dummy_input = torch.randn(1, 1, 50, 50)  # Adjust the input size as needed
-    torch.onnx.export(model, dummy_input, f"data/models_full/model{version}.onnx")
+    torch.onnx.export(model, dummy_input, f"../data/models_full/model{version}.onnx")
 
     # Quantize the model
-    quantized_model = quantize_dynamic(model_input=f"data/models_full/model{version}.onnx", model_output= f"data/models/model{version}.onnx", weight_type=QuantType.QUInt8)
+    quantized_model = quantize_dynamic(model_input=f"../data/models_full/model{version}.onnx", model_output= f"../data/models/model{version}.onnx", weight_type=QuantType.QUInt8)
 
-    print('ONNX full precision model size (MB):', os.path.getsize(f"data/models_full/model{version}.onnx")/(1024*1024))
-    print('ONNX quantized model size (MB):', os.path.getsize(f"data/models/model{version}.onnx")/(1024*1024))
+    print('ONNX full precision model size (MB):', os.path.getsize(f"../data/models_full/model{version}.onnx")/(1024*1024))
+    print('ONNX quantized model size (MB):', os.path.getsize(f"../data/models/model{version}.onnx")/(1024*1024))
 
 if __name__ == "__main__":
     images, labels = load_images_and_labels()
@@ -87,11 +87,11 @@ if __name__ == "__main__":
 
     y_train_indices = np.array([label_to_index[int(label)] for label in y_train])
 
-    with open("data/index_to_label.json", "w") as f:
+    with open("../data/index_to_label.json", "w") as f:
         json.dump(index_to_label, f)
 
     model.train_model(X_train, y_train_indices, num_epochs=50, learning_rate=0.001)
 
-    torch.save(model, "src/cnn_model.pth")
+    torch.save(model, "cnn_model.pth")
 
     save_onnx_model(model, 1)

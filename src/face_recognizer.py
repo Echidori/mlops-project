@@ -73,7 +73,7 @@ if __name__ == "__main__":
         logger.info("Starting face recognition system...")
 
         # Load the entire model
-        model = torch.load("src/cnn_model.pth", weights_only=False)
+        model = torch.load("cnn_model.pth", weights_only=False)
         model.eval()
 
         logger.info("Model loaded successfully.")
@@ -95,7 +95,7 @@ if __name__ == "__main__":
         if not names:
             logger.warning("No names loaded, recognition will be limited")
 
-        index_to_label = load_label_map("data/index_to_label.json")
+        index_to_label = load_label_map("../data/index_to_label.json")
 
         # Create label map: index (from model output) -> name
         label_map = {}
