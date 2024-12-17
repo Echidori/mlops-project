@@ -5,5 +5,5 @@ onnxruntime
 torch
 pyyaml
 pillow
-flask
+fastapi[standard]
 kivy[full]

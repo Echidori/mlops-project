@@ -18,6 +18,3 @@ CAMERA = config['camera']
 FACE_DETECTION = config['face_detection']
 TRAINING = config['training']
 PATHS = config['paths']
-
-# Confidence threshold
-CONFIDENCE_THRESHOLD = config['confidence_threshold']

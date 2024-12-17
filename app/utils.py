@@ -7,6 +7,12 @@ from config import PATHS
 
 import requests
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+
 def refresh_model(model):
     """Load the model for face recognition."""
     try:
@@ -16,7 +22,7 @@ def refresh_model(model):
         if not url:
             raise ValueError("SERVER_URL environment variable is not set")
 
-        response = requests.get(url + "/get_model_version")
+        response = requests.get(url + "/model_version")
         response.raise_for_status()
         model_version = response.json()["version"]
         print(f"Model version: {model_version}")
@@ -31,7 +37,7 @@ def refresh_model(model):
             print("Model is up to date.")
             return model
 
-        response = requests.get(url + "/get_model")
+        response = requests.get(url + "/model")
         response.raise_for_status()
         model_file = response.json()["model"]
 
@@ -51,6 +57,7 @@ def refresh_model(model):
 def load_label_map() -> dict:
     """Load the label map from the index_to_label.json file."""
     # Get the label map from the server
+
     url = os.getenv("SERVER_URL")
     if not url:
         raise ValueError("SERVER_URL environment variable is not set")
