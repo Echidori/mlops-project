@@ -1,6 +1,9 @@
 import cv2
 import json
 import os
+
+import numpy as np
+import torch
 from kivy.app import App
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.boxlayout import BoxLayout
@@ -16,7 +19,7 @@ from kivy.uix.gridlayout import GridLayout
 # Configurations
 from config import CAMERA, FACE_DETECTION, PATHS, TRAINING
 
-from utils import refresh_model, send_photos_to_server
+from utils import refresh_model, send_photos_to_server, get_names, load_label_map
 
 # Helper Functions
 def initialize_camera(camera_index=0):
@@ -53,8 +56,14 @@ class DefaultPage(Screen):
         layout = BoxLayout(orientation="vertical")
         layout.add_widget(self.img_widget)
         self.add_widget(layout)
+        self.label_map = {}
 
     def on_enter(self):
+        index_to_label = load_label_map()
+        for idx, face_id in index_to_label.items():
+            name = self.names.get(str(face_id), "Unknown")
+            self.label_map[face_id] = name
+
         self.capture = initialize_camera(CAMERA["index"])
         Clock.schedule_interval(self.update, 1.0 / 30.0)
 
@@ -75,10 +84,22 @@ class DefaultPage(Screen):
 
                     # Recognize the face
                     if self.model:
-                        id, confidence = self.model.predict(gray[y:y + h, x:x + w])
+
+                        face_img = gray[y:y + h, x:x + w]
+                        face_img = cv2.resize(face_img, (50, 50))
+                        face_img = face_img.astype(np.float32) / 255.0
+                        face_img = face_img.reshape(1, 1, 50, 50)  # Reshape to match the input shape
+
+                        input_tensor = torch.from_numpy(face_img)
+
+                        with torch.no_grad():
+                            outputs = self.model(input_tensor)
+
+                            _, predicted = torch.max(outputs.data, 1)
+                            predicted_idx = predicted.item()
 
                         # Get the name from the names dictionary based on the ID
-                        name = self.names.get(str(id), "Unknown")
+                        name = self.label_map.get(predicted_idx, "Unknown")
 
                         # Display name and confidence
                         cv2.putText(frame, name, (x + 5, y - 5),
@@ -219,9 +240,10 @@ class CameraApp(App):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.current_page = None
-        self.names = self.load_names()  # Charger les noms
-        self.model = None  # Placeholder pour le modèle de reconnaissance
-        self.update_model()  # Met à jour le modèle dès le début
+        self.names = self.load_names()
+        self.model = None
+        self.model_version = None
+        self.update_model()
 
     def load_names(self):
         if os.path.exists(PATHS["names_file"]):
@@ -232,10 +254,11 @@ class CameraApp(App):
     def update_model(self):
         """Load the model for face recognition."""
         try:
-            # Initialize the face recognizer
-            self.model = cv2.face.LBPHFaceRecognizer_create()
-
+            # Get the model version
+            # Use the "get_model_version" utils
             self.model = refresh_model(self.model)
+            if self.model is not None:
+                self.model.eval()
         except Exception as e:
             print(f"Error loading model: {e}")
             self.model = None
@@ -283,4 +306,6 @@ class CameraApp(App):
             self.add_person_page.start_capture()
 
 if __name__ == "__main__":
+    # Update the names file
+    get_names()
     CameraApp().run()

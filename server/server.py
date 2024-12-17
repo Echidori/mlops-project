@@ -1,13 +1,13 @@
 from typing import List
 
 from fastapi import FastAPI, UploadFile, File, Form
+from fastapi.responses import RedirectResponse
+
 import os
 from pathlib import Path
 import subprocess
-import shutil
-import uuid
 
-from fastapi.responses import RedirectResponse
+
 
 server = FastAPI()
 
@@ -38,33 +38,71 @@ def get_model():
         "model": "model"
     }
 
+@server.get("/get_names")
+def get_names():
+    names_file = Path(DATA_DIR) / "names.json"
+    if names_file.exists():
+        with open(names_file, "r") as f:
+            return {"names": f.read()}
+    return {"names": "[]"}
+
+@server.get("/get_label_map")
+def get_label_map():
+    label_map_file = Path(DATA_DIR) / "index_to_label.json"
+    if label_map_file.exists():
+        with open(label_map_file, "r") as f:
+            return {"index_to_label": f.read()}
+    return {"index_to_label": "{}"}
+
+
 def train_model() -> str:
-    """Simulates training a model and saving it as ONNX."""
-    version = str(uuid.uuid4())[:8]  # Generate a unique version
-    models_dir = Path(DATA_DIR) / "models"
-    models_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        result = subprocess.run(
+            ["python", "../src/cnn_train.py"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        print(result.stdout)
 
-    model_path = models_dir / f"{version}.onnx"
-    with open(model_path, "wb") as f:
-        f.write(b"This is a placeholder for ONNX model data.")
+        # Read the model version from the file
+        version_file = Path("../data/model_version.txt")
+        if version_file.exists():
+            with open(version_file, "r") as f:
+                model_version = f.read().strip()
+                return model_version
+        else:
+            print("Model version file not found.")
+            return "0"
+    except subprocess.CalledProcessError as e:
+        print(f"Error during model training: {e.stderr}")
+        return "0"
 
-    # Update the model version
-    version_file = Path(DATA_DIR) / "model_version.txt"
-    with open(version_file, "w") as f:
-        f.write(version)
-
-    return version
 
 def git_add_commit_push(model_version: str, branch: str):
     """Adds, commits, and pushes the new model to a specific branch using SSH."""
-    repo_dir = Path(DATA_DIR)
 
-    # Ensure SSH is used for Git
-    ssh_url = "git@github.com:user/repo.git"  # Replace with your repo's SSH URL
-    subprocess.run(["git", "remote", "set-url", "origin", ssh_url], cwd=repo_dir, check=True)
+    # Get repo URL from environment variable
+    ssh_url = os.getenv("GIT_SSH_URL")
+
+    if not ssh_url:
+        raise ValueError("GIT_SSH_URL environment variable is not set")
+
+    repo_dir = "./"
+
+    # Intialize a new Git repository at the root of the container
+    if not os.path.exists(os.path.join(repo_dir, ".git")):
+        subprocess.run(["git", "init"], cwd=repo_dir, check=True)
+
+    # Add the remote repository URL
+    subprocess.run(["git", "remote", "add", "origin", ssh_url], cwd=repo_dir, check=True)
 
     # Git add
-    subprocess.run(["git", "add", "models/"], cwd=repo_dir, check=True)
+    subprocess.run(["git", "add", "data/models/"], cwd=repo_dir, check=True)
+    subprocess.run(["git", "add", "data/images/"], cwd=repo_dir, check=True)
+    subprocess.run(["git", "add", "data/names.json"], cwd=repo_dir, check=True)
+    subprocess.run(["git", "add", "data/index_to_label.json"], cwd=repo_dir, check=True)
+    subprocess.run(["git", "add", "data/model_version.txt"], cwd=repo_dir, check=True)
 
     # Git commit
     commit_message = f"Add new model version {model_version}"

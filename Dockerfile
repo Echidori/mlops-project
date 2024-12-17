@@ -1,12 +1,15 @@
-from python:3.12
+FROM python:3.12
 
-WORKDIR /app
+WORKDIR /
 
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
+COPY .env ./
+COPY data/ ./
 COPY server ./
-COPY data ./
+COPY src/ ./
+
 EXPOSE 2704
 
 CMD ["fastapi", "run", "server/server.py", "--port", "2704"]

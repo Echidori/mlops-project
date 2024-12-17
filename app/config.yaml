@@ -17,9 +17,5 @@ training:
 # File paths
 paths:
   cascade_file: "cascade.xml"
-  image_dir: "../data/images"
-  names_file: "../data/names.json"
-  trainer_file: "trainer.yml" # TO BE REMOVED
-
-# Confidence threshold
-confidence_threshold: 40 # TO BE REMOVED MAYBE
+  image_dir: "./images"
+  names_file: "./names.json"

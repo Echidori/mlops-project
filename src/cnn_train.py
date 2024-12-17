@@ -94,4 +94,11 @@ if __name__ == "__main__":
 
     torch.save(model, "cnn_model.pth")
 
-    save_onnx_model(model, 1)
+    # The version of the model is the size of the "../data/models" directory
+    model_version = len(os.listdir("../data/models")) + 1
+
+    save_onnx_model(model, model_version)
+
+    # Set the model version inside the "../data/model_version.txt" file
+    with open("../data/model_version.txt", "w") as f:
+        f.write(str(model_version))

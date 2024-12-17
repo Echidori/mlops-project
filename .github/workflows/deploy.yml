@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - feat/pipeline
+      - new-model-updates
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,12 +26,16 @@ jobs:
         
       - name: Connect to the server
         run: |
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh ubuntu@${{ secrets.SSH_HOST }} -o StrictHostKeyChecking=no << 'EOF'
-            if [ ! -d "/home/ubuntu/mlops-project" ]; then
-              mkdir /home/ubuntu/mlops-project
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} -o StrictHostKeyChecking=no << 'EOF'
+            if [ ! -d "/home/${{ secrets.SSH_USER }}/mlops-project" ]; then
+              mkdir /home/${{ secrets.SSH_USER }}/mlops-project
             fi
-            cd /home/ubuntu/mlops-project
+            cd /home/${{ secrets.SSH_USER }}/mlops-project
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/mlops-project-1:latest
             docker stop mlops-project || true
-            docker run -d -p 2704:2704 --name mlops-project ${{ secrets.DOCKER_HUB_USERNAME }}/mlops-project-1:latest
+            docker run -d -p 2704:2704 \
+            --name mlops-project \
+            -v ~/.ssh:/root/.ssh \
+            -e GIT_SSH_COMMAND="ssh -i /root/.ssh/id_rsa -o StrictHostKeyChecking=no" \
+            ${{ secrets.DOCKER_HUB_USERNAME }}/mlops-project-1:latest
           EOF
