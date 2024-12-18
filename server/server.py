@@ -91,7 +91,7 @@ def train_model() -> str:
 
 
 def git_add_commit_push(model_version: str, branch: str):
-    """Adds, commits, and pushes the new model to a specific branch using SSH."""
+    """Clones the repository, adds, commits, and pushes the new model to a specific branch using SSH."""
     ssh_url = os.getenv("GIT_SSH_URL")
 
     if not ssh_url:
@@ -99,61 +99,31 @@ def git_add_commit_push(model_version: str, branch: str):
 
     repo_dir = "./"
 
-    print("Configuring Git user...")
-    subprocess.run(["git", "config", "--global", "user.name", "JulienSchaff"], check=True)
-    subprocess.run(["git", "config", "--global", "user.email", "julien.schaffauser@epita.fr"], check=True)
+    # Clone the repository with the given branch
+    print(f"Cloning repository and checking out branch '{branch}'...")
+    subprocess.run(["git", "clone", "-b", branch, ssh_url, repo_dir], check=True)
 
-    # Initialize a new Git repository at the root of the container if necessary
-    if not os.path.exists(os.path.join(repo_dir, ".git")):
-        print("Initializing Git repository...")
-        subprocess.run(["git", "init"], cwd=repo_dir, check=True)
+    # Change to the cloned repository directory
+    os.chdir(repo_dir)
 
-    # Add the remote repository URL if not already added
-    remotes = subprocess.run(["git", "remote"], cwd=repo_dir, capture_output=True, text=True, check=True)
-    if "origin" not in remotes.stdout:
-        print("Adding remote 'origin'...")
-        subprocess.run(["git", "remote", "add", "origin", ssh_url], cwd=repo_dir, check=True)
-
-    # Fetch the remote branch if it exists
-    print(f"Fetching branch '{branch}' from remote...")
-    subprocess.run(["git", "fetch", "origin", branch], cwd=repo_dir, check=True)
-
-    # Checkout the branch (force it)
-    print(f"Checking out branch '{branch}'...")
-    subprocess.run(["git", "checkout", "-f", f"origin/{branch}"], cwd=repo_dir, check=True)
-
-    # Rebase on top of the remote branch
-    print(f"Rebasing local changes on top of the remote '{branch}'...")
-    try:
-        subprocess.run(["git", "rebase", "origin/" + branch], cwd=repo_dir, check=True)
-        print("Rebase successful.")
-    except subprocess.CalledProcessError:
-        print("Rebase failed. Resolving conflicts...")
-        # If rebase fails, you can resolve conflicts manually here.
-        # In case of a conflict, you would use the following:
-        subprocess.run(["git", "rebase", "--abort"], cwd=repo_dir, check=True)  # Abort the current rebase
-
-        # Optionally, you can implement conflict resolution here based on your workflow.
-        raise Exception("Rebase failed and conflicts need to be resolved manually.")
-
-    # Add all the files
+    # Add the files to Git
     print("Adding new files to Git...")
-    subprocess.run(["git", "add", "-f", "data/models/"], cwd=repo_dir, check=True)
-    subprocess.run(["git", "add", "-f", "data/images/"], cwd=repo_dir, check=True)
-    subprocess.run(["git", "add", "-f", "data/names.json"], cwd=repo_dir, check=True)
-    subprocess.run(["git", "add", "-f", "data/index_to_label.json"], cwd=repo_dir, check=True)
-    subprocess.run(["git", "add", "-f", "data/model_version.txt"], cwd=repo_dir, check=True)
+    subprocess.run(["git", "add", "-f", "data/models/"], check=True)
+    subprocess.run(["git", "add", "-f", "data/images/"], check=True)
+    subprocess.run(["git", "add", "-f", "data/names.json"], check=True)
+    subprocess.run(["git", "add", "-f", "data/index_to_label.json"], check=True)
+    subprocess.run(["git", "add", "-f", "data/model_version.txt"], check=True)
 
     # Commit the changes
     commit_message = f"Add new model version {model_version}"
     print(f"Committing changes with message: '{commit_message}'")
-    subprocess.run(["git", "commit", "-m", commit_message], cwd=repo_dir, check=True)
+    subprocess.run(["git", "commit", "-m", commit_message], check=True)
 
     # Push the changes
     print(f"Pushing changes to branch '{branch}'...")
-    subprocess.run(["git", "push", "origin", f"{branch}:{branch}"], cwd=repo_dir, check=True)
-    print(f"Successfully pushed changes to branch '{branch}'.")
+    subprocess.run(["git", "push", "origin", branch], check=True)
 
+    print(f"Successfully pushed changes to branch '{branch}'.")
 
 @server.post("/add_person")
 async def add_person(
