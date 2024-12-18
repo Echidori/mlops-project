@@ -116,14 +116,14 @@ def git_add_commit_push(model_version: str, branch: str):
     # Fetch the remote branch if it exists
     subprocess.run(["git", "fetch", "origin", branch], cwd=repo_dir, check=True)
 
-    # Check if the branch exists locally
-    local_branches = subprocess.run(["git", "branch"], cwd=repo_dir, capture_output=True, text=True, check=True)
-    if branch not in local_branches.stdout:
-        # If not, create and track the branch
-        subprocess.run(["git", "checkout", "-Bf", branch, f"origin/{branch}"], cwd=repo_dir, check=True)
-    else:
-        # If it exists, force check it out
-        subprocess.run(["git", "checkout", "-f", branch], cwd=repo_dir, check=True)
+    # Check if there are untracked changes, and stash them if necessary
+    subprocess.run(["git", "stash", "-u"], cwd=repo_dir, check=True)
+
+    # Checkout the branch (force it)
+    subprocess.run(["git", "checkout", "-f", f"origin/{branch}"], cwd=repo_dir, check=True)
+
+    # Retrieve stashed changes (if any were stashed)
+    subprocess.run(["git", "stash", "pop"], cwd=repo_dir, check=True)
 
     # Git add
     subprocess.run(["git", "add", "-f", "data/models/"], cwd=repo_dir, check=True)
