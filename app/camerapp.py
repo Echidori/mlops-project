@@ -61,8 +61,9 @@ class DefaultPage(Screen):
     def on_enter(self):
         index_to_label = load_label_map()
         for idx, face_id in index_to_label.items():
+            print(f"Face ID: {idx}")
             name = self.names.get(str(face_id), "Unknown")
-            self.label_map[face_id] = name
+            self.label_map[idx] = name
 
         self.capture = initialize_camera(CAMERA["index"])
         Clock.schedule_interval(self.update, 1.0 / 30.0)
@@ -100,6 +101,7 @@ class DefaultPage(Screen):
 
                         # Get the name from the names dictionary based on the ID
                         name = self.label_map.get(predicted_idx, "Unknown")
+                        name = f"{name} ({predicted_idx})"
 
                         # Display name and confidence
                         cv2.putText(frame, name, (x + 5, y - 5),

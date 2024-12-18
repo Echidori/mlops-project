@@ -197,7 +197,7 @@ async def add_person(
     names_dict = json.loads(names)
 
     # Add the new name to the dictionary
-    names_dict[name] = model_version
+    names_dict[str(int(model_version) + 1)] = name
 
     # Convert the dictionary back to a JSON object
     names = json.dumps(names_dict)
