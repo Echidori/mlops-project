@@ -112,7 +112,7 @@ def git_add_commit_push(model_version: str, branch: str):
 
     # Check the Git status to verify added files
     print("Checking Git status to verify staged changes...")
-    result = subprocess.run(["git", "status"], check=True, cwd=repo_dir, capture_output=True, text=True)
+    result = subprocess.run(["git", "status"], check=True, capture_output=True, text=True)
 
     # Print the output of git status
     print("Git status output:")
@@ -128,7 +128,7 @@ def git_add_commit_push(model_version: str, branch: str):
 
     # Check the Git status to verify added files
     print("Checking Git status to verify staged changes...")
-    result = subprocess.run(["git", "status"], check=True, cwd=repo_dir, capture_output=True, text=True)
+    result = subprocess.run(["git", "status"], check=True, capture_output=True, text=True)
 
     # Print the output of git status
     print("Git status output:")
