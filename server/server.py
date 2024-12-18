@@ -90,6 +90,9 @@ def train_model() -> str:
 def git_add_commit_push(model_version: str, branch: str):
     """Adds, commits, and pushes the new model to a specific branch using SSH."""
 
+    import os
+    import subprocess
+
     # Get repo URL from environment variable
     ssh_url = os.getenv("GIT_SSH_URL")
 
@@ -101,7 +104,7 @@ def git_add_commit_push(model_version: str, branch: str):
     subprocess.run(["git", "config", "--global", "user.name", "JulienSchaff"], check=True)
     subprocess.run(["git", "config", "--global", "user.email", "julien.schaffauser@epita.fr"], check=True)
 
-    # Intialize a new Git repository at the root of the container
+    # Initialize a new Git repository at the root of the container
     if not os.path.exists(os.path.join(repo_dir, ".git")):
         subprocess.run(["git", "init"], cwd=repo_dir, check=True)
 
@@ -117,24 +120,25 @@ def git_add_commit_push(model_version: str, branch: str):
     local_branches = subprocess.run(["git", "branch"], cwd=repo_dir, capture_output=True, text=True, check=True)
     if branch not in local_branches.stdout:
         # If not, create and track the branch
-        subprocess.run(["git", "checkout", "-b", branch, f"origin/{branch}"], cwd=repo_dir, check=True)
+        subprocess.run(["git", "checkout", "-B", branch, f"origin/{branch}"], cwd=repo_dir, check=True)
     else:
-        # If it exists, check it out
-        subprocess.run(["git", "checkout", branch], cwd=repo_dir, check=True)
+        # If it exists, force check it out
+        subprocess.run(["git", "checkout", "-f", branch], cwd=repo_dir, check=True)
 
     # Git add
-    subprocess.run(["git", "add", "data/models/"], cwd=repo_dir, check=True)
-    subprocess.run(["git", "add", "data/images/"], cwd=repo_dir, check=True)
-    subprocess.run(["git", "add", "data/names.json"], cwd=repo_dir, check=True)
-    subprocess.run(["git", "add", "data/index_to_label.json"], cwd=repo_dir, check=True)
-    subprocess.run(["git", "add", "data/model_version.txt"], cwd=repo_dir, check=True)
+    subprocess.run(["git", "add", "-f", "data/models/"], cwd=repo_dir, check=True)
+    subprocess.run(["git", "add", "-f", "data/images/"], cwd=repo_dir, check=True)
+    subprocess.run(["git", "add", "-f", "data/names.json"], cwd=repo_dir, check=True)
+    subprocess.run(["git", "add", "-f", "data/index_to_label.json"], cwd=repo_dir, check=True)
+    subprocess.run(["git", "add", "-f", "data/model_version.txt"], cwd=repo_dir, check=True)
 
     # Git commit
     commit_message = f"Add new model version {model_version}"
     subprocess.run(["git", "commit", "-m", commit_message], cwd=repo_dir, check=True)
 
     # Git push
-    subprocess.run(["git", "push", "origin", branch], cwd=repo_dir, check=True)
+    subprocess.run(["git", "push", "-f", "origin", branch], cwd=repo_dir, check=True)
+
 
 @server.post("/add_person")
 async def add_person(
