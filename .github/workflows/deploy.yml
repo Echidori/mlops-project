@@ -31,9 +31,9 @@ jobs:
               mkdir /home/${{ secrets.SSH_USER }}/mlops-project
             fi
             cd /home/${{ secrets.SSH_USER }}/mlops-project
-            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/mlops-project-1:latest
             docker stop mlops-project || true
             docker rm mlops-project || true
+            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/mlops-project-1:latest
             docker run -d -p 2704:8000 \
             --name mlops-project \
             -v ~/.ssh:/root/.ssh \
