@@ -51,7 +51,7 @@ def refresh_model(model):
         with open(PATHS['model_file'], "wb") as f:
             f.write(model_file)
 
-        model = torch.jit.load(PATHS['model_file'])
+        model = torch.load(PATHS['model_file'])
 
         print("Model loaded successfully.")
 
