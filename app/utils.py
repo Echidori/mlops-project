@@ -1,3 +1,4 @@
+import json
 import os
 
 import torch
@@ -38,7 +39,12 @@ def refresh_model(model):
 
         response = requests.get(url + "/model")
         response.raise_for_status()
+
+        print(response.json())
+
         model_file = response.json()["model"]
+
+        print(model_file)
 
         with open(PATHS['model_file'], "wb") as f:
             f.write(model_file.encode())
@@ -66,6 +72,8 @@ def load_label_map() -> dict:
         response = requests.get(url + "/get_label_map")
         response.raise_for_status()
         index_to_label = response.json()["index_to_label"]
+
+        index_to_label = json.loads(index_to_label)
 
         # Convert keys back to integers
         index_to_label = {int(k): int(v) for k, v in index_to_label.items()}
