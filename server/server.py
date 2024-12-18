@@ -5,6 +5,7 @@ from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import RedirectResponse, FileResponse
 from dotenv import load_dotenv
 from typing import List
+import shutil
 
 server = FastAPI()
 
@@ -90,23 +91,50 @@ def train_model() -> str:
 
 
 
+
 def git_add_commit_push(model_version: str, branch: str):
-    """Clones the repository, adds, commits, and pushes the new model to a specific branch using SSH."""
+    """Clones the repository, copies necessary files, adds, commits, and pushes the new model to a specific branch using SSH."""
     ssh_url = os.getenv("GIT_SSH_URL")
 
     if not ssh_url:
         raise ValueError("GIT_SSH_URL environment variable is not set")
 
-    repo_dir = "./"
+    # Directory for cloning the repository
+    repo_dir = "./temp_repo"
 
     # Clone the repository with the given branch
     print(f"Cloning repository and checking out branch '{branch}'...")
     subprocess.run(["git", "clone", "-b", branch, ssh_url, repo_dir], check=True)
 
+    # Define the source directory (where the files are currently stored)
+    source_dir = "./"  # Replace with the directory that contains the files to be added
+
+    # List of files and directories to copy
+    files_to_copy = [
+        "data/models/",
+        "data/images/",
+        "data/names.json",
+        "data/index_to_label.json",
+        "data/model_version.txt"
+    ]
+
+    # Copy the necessary files into the cloned repo directory
+    print("Copying necessary files to the cloned repository...")
+    for item in files_to_copy:
+        source_path = os.path.join(source_dir, item)
+        dest_path = os.path.join(repo_dir, item)
+
+        if os.path.isdir(source_path):
+            # Copy the entire directory
+            shutil.copytree(source_path, dest_path, dirs_exist_ok=True)
+        else:
+            # Copy the single file
+            shutil.copy2(source_path, dest_path)
+
     # Change to the cloned repository directory
     os.chdir(repo_dir)
 
-    # Add the files to Git
+    # Add the copied files to Git
     print("Adding new files to Git...")
     subprocess.run(["git", "add", "-f", "data/models/"], check=True)
     subprocess.run(["git", "add", "-f", "data/images/"], check=True)
