@@ -1,7 +1,7 @@
 from typing import List
 
 from fastapi import FastAPI, UploadFile, File, Form
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse
 
 import os
 from pathlib import Path
@@ -31,12 +31,19 @@ def get_model_version():
             return {"version": f.read().strip()}
     return {"version": "0"}
 
+
 @server.get("/model")
 def get_model():
-    return {
-        "version": get_model_version()["version"],
-        "model": open(Path(DATA_DIR) / f"models/model-{get_model_version()["version"]}.pth", "rb").read()
-    }
+    model_version_path = Path(DATA_DIR) / "model_version.txt"
+    with open(model_version_path, "r") as f:
+        model_version = f.read().strip()
+
+    model_path = Path(DATA_DIR) / f"models/model-{model_version}.pth"
+
+    print(f"Returning model version {model_version}")
+
+    # Utilisation de FileResponse pour renvoyer le fichier binaire directement
+    return FileResponse(model_path, media_type='application/octet-stream')
 
 @server.get("/get_names")
 def get_names():
