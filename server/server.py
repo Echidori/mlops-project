@@ -7,9 +7,6 @@ from fastapi.responses import RedirectResponse, FileResponse
 from dotenv import load_dotenv
 from typing import List
 import shutil
-
-from src.face_taker import logger
-
 server = FastAPI()
 
 DATA_DIR = os.getenv("DATA_DIR", "../data/")
