@@ -98,6 +98,9 @@ def git_add_commit_push(model_version: str, branch: str):
 
     repo_dir = "./"
 
+    subprocess.run(["git", "config", "--global", "user.name", "JulienSchaff"], check=True)
+    subprocess.run(["git", "config", "--global", "user.email", "julien.schaffauser@epita.fr"], check=True)
+
     # Intialize a new Git repository at the root of the container
     if not os.path.exists(os.path.join(repo_dir, ".git")):
         subprocess.run(["git", "init"], cwd=repo_dir, check=True)
