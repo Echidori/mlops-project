@@ -1,85 +1,38 @@
-# Real Time Face Recognition (OpenCV)
+# MLOPS - Face Recognition
 
-Create a fast real-time face recognition app with Python and OpenCV.
+### Abel Andry - Emile Merle - Julien Schaffauser
 
-## Installation
+Ce projet propose une solution complète de reconnaissance faciale basée sur un modèle **OpenCV Cascade** pour la détection des visages, et un **CNN custom** pour la reconnaissance des visages.
 
-```bash
-pip install -r requirements.txt
-```
+## **Fonctionnalités principales**
 
-Required packages:
-- opencv-python
-- opencv-contrib-python
-- pillow
-- pyyaml
+- **Détection et reconnaissance faciale** :
+  - Utilisation d'OpenCV pour détecter les visages.
+  - Identification des visages grâce à un modèle de réseau de neurones convolutifs (CNN).
+- **Application Kivy** :
+  - L'application, autonome, permet d'interagir avec la caméra pour détecter et ajouter des visages.
+  - Disponible dans le dossier `app/`.
+  - Peut être lancée via le fichier `camerapp.py`.
+- **Gestion serveur** :
+  - Le serveur est hébergé sur une machine virtuelle Azure.
+  - Automatisation du déploiement via GitHub Actions.
+  - Mise à jour dynamique du modèle lors de l'ajout de nouvelles personnes.
 
-## Configuration
+## **Workflow général**
 
-All settings are stored in `src/config.yaml`:
-- Camera settings (resolution, device index)
-- Face detection parameters
-- Training parameters
-- File paths
-- Confidence threshold (how confident the model has to be to recognize a face)
+1. **Ajout d'une nouvelle personne depuis l'application Kivy** :
+   - L'utilisateur capture le visage d'une personne via l'application.
+   - L'application envoie les données au serveur.
 
-You can modify these settings without changing the code.
+2. **Réentraînement du modèle** :
+   - Le serveur lance un entraînement du modèle CNN pour inclure la nouvelle personne.
+   - Les fichiers de données et métadonnées sont mis à jour.
 
-## Usage
+3. **Mise à jour Git** :
+   - Le serveur publie les nouvelles données sur une branche dédiée `new-model-updates` du dépôt Git.
 
-The system works in three steps:
-
-### 1. Capture Face Data
-Run `face_taker.py` to capture training images:
-```bash
-python src/face_taker.py
-```
-- Enter your name when prompted
-- :rotating_light: The script captures 120 images of your face. Make sure to have a good lighting and move your head around to capture different angles.
-- Keep your face centered in the frame
-- Images are saved in the `images` folder
-- Your name and ID are stored in `names.json`
-- Press 'ESC' to exit early
-
-Format of `names.json`:
-```json
-{
-    "1": "Joe",
-    "2": "Jane"
-}
-```
-
-### 2. Train the Model
-Run `face_train.py` to create the recognition model:
-```bash
-python src/face_train.py
-```
-- Processes all images in the `images` folder
-- Creates a trained model file `trainer.yml`
-- Shows number of faces trained
-
-Note: Training images are saved as: `Users-{id}-{number}.jpg`
-### 3. Run Face Recognition
-Run `face_recognizer.py` to start real-time recognition:
-```bash
-python src/face_recognizer.py
-```
-- Your webcam will open and start recording
-- Recognizes faces in real-time
-- Shows name and confidence level
-- Press 'ESC' to exit
-
-## Project Structure
-```
-├── src/
-│   ├── config.yaml      # Configuration settings
-│   ├── config.py        # Configuration loader
-│   ├── face_taker.py    # Capture training images
-│   ├── face_train.py    # Train the model
-│   └── face_recognizer.py # Real-time recognition
-├── images/              # Training images
-├── names.json          # Name-ID mappings
-└── trainer.yml         # Trained model
-```
+4. **Automatisation GitHub Actions** :
+   - Mise à jour de l'image Docker avec le nouveau modèle.
+   - Déploiement automatique de l'image sur la machine virtuelle Azure.
 
 
