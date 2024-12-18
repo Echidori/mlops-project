@@ -19,3 +19,5 @@ paths:
   cascade_file: "cascade.xml"
   image_dir: "./images"
   names_file: "./names.json"
+  model_version_file: "./model_version.txt"
+  model_file: "./model.pth"

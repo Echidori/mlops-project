@@ -1,7 +1,6 @@
-import cv2
 import os
 
-import onnx
+import torch
 
 from config import PATHS
 
@@ -42,9 +41,10 @@ def refresh_model(model):
         model_file = response.json()["model"]
 
         with open(PATHS['model_file'], "wb") as f:
-            f.write(model_file)
+            f.write(model_file.encode())
 
-        model = onnx.load(PATHS['model_file'])
+        model = torch.load(PATHS['model_file'])
+
         print("Model loaded successfully.")
 
         return model

@@ -1,10 +1,6 @@
-import torch.onnx
-from onnxruntime.quantization import quantize_dynamic, QuantType
 import os
 import cv2
 import torch
-import torch.nn as nn
-import torch.optim as optim
 import numpy as np
 import json
 from cnn import Net
@@ -53,15 +49,10 @@ def load_images_and_labels():
     labels = np.array(labels)
     return images, labels
 
-def save_onnx_model(model, version):
-    dummy_input = torch.randn(1, 1, 50, 50)  # Adjust the input size as needed
-    torch.onnx.export(model, dummy_input, f"../data/models_full/model{version}.onnx")
+def save_torch_model(model, version):
+    torch.save(model, f"../data/models/model-{version}.pth")
 
-    # Quantize the model
-    quantized_model = quantize_dynamic(model_input=f"../data/models_full/model{version}.onnx", model_output= f"../data/models/model{version}.onnx", weight_type=QuantType.QUInt8)
-
-    print('ONNX full precision model size (MB):', os.path.getsize(f"../data/models_full/model{version}.onnx")/(1024*1024))
-    print('ONNX quantized model size (MB):', os.path.getsize(f"../data/models/model{version}.onnx")/(1024*1024))
+    print('Model size (MB):', os.path.getsize(f"../data/models/model-{version}.pth")/(1024*1024))
 
 if __name__ == "__main__":
     images, labels = load_images_and_labels()
@@ -92,12 +83,10 @@ if __name__ == "__main__":
 
     model.train_model(X_train, y_train_indices, num_epochs=50, learning_rate=0.001)
 
-    torch.save(model, "cnn_model.pth")
-
     # The version of the model is the size of the "../data/models" directory
     model_version = len(os.listdir("../data/models")) + 1
 
-    save_onnx_model(model, model_version)
+    save_torch_model(model, model_version)
 
     # Set the model version inside the "../data/model_version.txt" file
     with open("../data/model_version.txt", "w") as f:

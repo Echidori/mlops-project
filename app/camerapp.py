@@ -254,8 +254,6 @@ class CameraApp(App):
     def update_model(self):
         """Load the model for face recognition."""
         try:
-            # Get the model version
-            # Use the "get_model_version" utils
             self.model = refresh_model(self.model)
             if self.model is not None:
                 self.model.eval()

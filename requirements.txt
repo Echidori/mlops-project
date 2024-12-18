@@ -1,7 +1,5 @@
 opencv-python
 opencv-contrib-python
-onnx
-onnxruntime
 torch
 pyyaml
 pillow
