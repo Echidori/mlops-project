@@ -117,14 +117,14 @@ def git_add_commit_push(model_version: str, branch: str):
     print(f"Fetching branch '{branch}' from remote...")
     subprocess.run(["git", "fetch", "origin", branch], cwd=repo_dir, check=True)
 
-    # Stash any changes and force checkout the branch
-    print("Stashing untracked files...")
-    subprocess.run(["git", "stash", "-u"], cwd=repo_dir, check=True)  # -u to stash untracked files
-    print(f"Checking out branch '{branch}'...")
-    subprocess.run(["git", "checkout", "-B", branch, f"origin/{branch}"], cwd=repo_dir, check=True)
-    print("Popping stashed changes...")
-    subprocess.run(["git", "stash", "pop"], cwd=repo_dir, check=True)
+    # Check if there are untracked changes, and stash them if necessary
+    subprocess.run(["git", "stash", "-u"], cwd=repo_dir, check=True)
 
+    # Checkout the branch (force it)
+    subprocess.run(["git", "checkout", "-f", f"origin/{branch}"], cwd=repo_dir, check=True)
+
+    # Retrieve stashed changes (if any were stashed)
+    subprocess.run(["git", "stash", "pop"], cwd=repo_dir, check=True)
     # Add all the files
     print("Adding new files to Git...")
     subprocess.run(["git", "add", "-f", "data/models/"], cwd=repo_dir, check=True)
