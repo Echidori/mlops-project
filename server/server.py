@@ -63,20 +63,6 @@ def get_label_map():
             return {"index_to_label": f.read()}
     return {"index_to_label": "{}"}
 
-
-def train_model() -> str:
-    try:
-
-        else:
-            print("Model version file not found.")
-            return "0"
-    except subprocess.CalledProcessError as e:
-        print(f"Error during model training: {e.stderr}")
-        return "0"
-
-
-
-
 def git_add_commit_push(model_version: str, branch: str):
     """Clones the repository, copies necessary files, adds, commits, and pushes the new model to a specific branch using SSH."""
     ssh_url = os.getenv("GIT_SSH_URL")
