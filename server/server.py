@@ -120,7 +120,7 @@ def git_add_commit_push(model_version: str, branch: str):
     local_branches = subprocess.run(["git", "branch"], cwd=repo_dir, capture_output=True, text=True, check=True)
     if branch not in local_branches.stdout:
         # If not, create and track the branch
-        subprocess.run(["git", "checkout", "-B", branch, f"origin/{branch}"], cwd=repo_dir, check=True)
+        subprocess.run(["git", "checkout", "-Bf", branch, f"origin/{branch}"], cwd=repo_dir, check=True)
     else:
         # If it exists, force check it out
         subprocess.run(["git", "checkout", "-f", branch], cwd=repo_dir, check=True)
