@@ -50,7 +50,11 @@ def load_images_and_labels():
     return images, labels
 
 def save_torch_model(model, version):
-    torch.save(model, f"../data/models/model-{version}.pth")
+    example_input = torch.rand(1, 50 * 50)  # Create a dummy input tensor that matches the input size
+    traced_model = torch.jit.trace(model, example_input)
+
+    # Save the traced model
+    traced_model.save(f"../data/models/model-{version}.pt")
 
     print('Model size (MB):', os.path.getsize(f"../data/models/model-{version}.pth")/(1024*1024))
 

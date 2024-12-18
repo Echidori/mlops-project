@@ -36,10 +36,13 @@ def refresh_model(model):
         if current_model_version == model_version and model is not None:
             print("Model is up to date.")
             return model
+
+        print("Model is outdated. Loading new model...")
+
         response = requests.get(url + "/model")
         response.raise_for_status()
 
-        print(response.json())
+        print("Model loaded successfully.")
 
         model_file = response.content
 
@@ -48,7 +51,7 @@ def refresh_model(model):
         with open(PATHS['model_file'], "wb") as f:
             f.write(model_file)
 
-        model = torch.load(PATHS['model_file'])
+        model = torch.jit.load(PATHS['model_file'])
 
         print("Model loaded successfully.")
 
