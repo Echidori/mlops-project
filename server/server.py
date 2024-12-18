@@ -102,6 +102,10 @@ def git_add_commit_push(model_version: str, branch: str):
     # Directory for cloning the repository
     repo_dir = "./temp_repo"
 
+    print("Configuring Git user...")
+    subprocess.run(["git", "config", "--global", "user.name", "JulienSchaff"], check=True)
+    subprocess.run(["git", "config", "--global", "user.email", "julien.schaffauser@epita.fr"], check=True)
+
     # Clone the repository with the given branch
     print(f"Cloning repository and checking out branch '{branch}'...")
     subprocess.run(["git", "clone", "-b", branch, ssh_url, repo_dir], check=True)
