@@ -66,22 +66,7 @@ def get_label_map():
 
 def train_model() -> str:
     try:
-        print("Starting model training...")
-        result = subprocess.run(
-            ["python", "../src/cnn_train.py"],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        print("Model training complete.")
-        print(result.stdout)
 
-        # Read the model version from the file
-        version_file = Path("../data/model_version.txt")
-        if version_file.exists():
-            with open(version_file, "r") as f:
-                model_version = f.read().strip()
-                return model_version
         else:
             print("Model version file not found.")
             return "0"
@@ -169,7 +154,7 @@ def git_add_commit_push(model_version: str, branch: str):
 
     # Push the changes
     print(f"Pushing changes to branch '{branch}'...")
-    subprocess.run(["git", "push", "origin", branch], check=True)
+    subprocess.run(["git", "push"], check=True)
 
     print(f"Successfully pushed changes to branch '{branch}'.")
 
@@ -188,7 +173,23 @@ async def add_person(
 
     # Train the model
     print(f"Starting training for person '{name}'...")
-    model_version = train_model()
+    print("Starting model training...")
+    result = subprocess.run(
+        ["python", "../src/cnn_train.py"],
+        capture_output=True,
+        text=True,
+        check=True
+    )
+    print("Model training complete.")
+    print(result.stdout)
+
+    # Read the model version from the file
+    version_file = Path("../data/model_version.txt")
+    if version_file.exists():
+        with open(version_file, "r") as f:
+            model_version = f.read().strip()
+    else:
+        model_version = "0"
 
     # Ensure that model training is complete before continuing
     if model_version == "0":
