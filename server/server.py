@@ -1,28 +1,28 @@
-from typing import List
-
+import os
+import subprocess
+from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import RedirectResponse, FileResponse
-
-import os
-from pathlib import Path
-import subprocess
+from dotenv import load_dotenv
+from typing import List
 
 server = FastAPI()
 
 DATA_DIR = os.getenv("DATA_DIR", "../data/")
 Path(DATA_DIR).mkdir(parents=True, exist_ok=True)
 
-from dotenv import load_dotenv
-
 load_dotenv()
+
 
 @server.get("/")
 def redirect_to_docs():
     return RedirectResponse(url="/docs")
 
+
 @server.get("/health")
 def health():
     return {"status": "ok"}
+
 
 @server.get("/model_version")
 def get_model_version():
@@ -42,9 +42,8 @@ def get_model():
     model_path = Path(DATA_DIR) / f"models/model-{model_version}.pth"
 
     print(f"Returning model version {model_version}")
-
-    # Utilisation de FileResponse pour renvoyer le fichier binaire directement
     return FileResponse(model_path, media_type='application/octet-stream')
+
 
 @server.get("/get_names")
 def get_names():
@@ -53,6 +52,7 @@ def get_names():
         with open(names_file, "r") as f:
             return {"names": f.read()}
     return {"names": "[]"}
+
 
 @server.get("/get_label_map")
 def get_label_map():
@@ -65,12 +65,14 @@ def get_label_map():
 
 def train_model() -> str:
     try:
+        print("Starting model training...")
         result = subprocess.run(
             ["python", "../src/cnn_train.py"],
             capture_output=True,
             text=True,
             check=True
         )
+        print("Model training complete.")
         print(result.stdout)
 
         # Read the model version from the file
@@ -89,11 +91,6 @@ def train_model() -> str:
 
 def git_add_commit_push(model_version: str, branch: str):
     """Adds, commits, and pushes the new model to a specific branch using SSH."""
-
-    import os
-    import subprocess
-
-    # Get repo URL from environment variable
     ssh_url = os.getenv("GIT_SSH_URL")
 
     if not ssh_url:
@@ -101,50 +98,57 @@ def git_add_commit_push(model_version: str, branch: str):
 
     repo_dir = "./"
 
+    print("Configuring Git user...")
     subprocess.run(["git", "config", "--global", "user.name", "JulienSchaff"], check=True)
     subprocess.run(["git", "config", "--global", "user.email", "julien.schaffauser@epita.fr"], check=True)
 
-    # Initialize a new Git repository at the root of the container
+    # Initialize a new Git repository at the root of the container if necessary
     if not os.path.exists(os.path.join(repo_dir, ".git")):
+        print("Initializing Git repository...")
         subprocess.run(["git", "init"], cwd=repo_dir, check=True)
 
     # Add the remote repository URL if not already added
     remotes = subprocess.run(["git", "remote"], cwd=repo_dir, capture_output=True, text=True, check=True)
     if "origin" not in remotes.stdout:
+        print("Adding remote 'origin'...")
         subprocess.run(["git", "remote", "add", "origin", ssh_url], cwd=repo_dir, check=True)
 
     # Fetch the remote branch if it exists
+    print(f"Fetching branch '{branch}' from remote...")
     subprocess.run(["git", "fetch", "origin", branch], cwd=repo_dir, check=True)
 
-    # Check if there are untracked changes, and stash them if necessary
-    subprocess.run(["git", "stash", "-u"], cwd=repo_dir, check=True)
-
-    # Checkout the branch (force it)
-    subprocess.run(["git", "checkout", "-f", f"origin/{branch}"], cwd=repo_dir, check=True)
-
-    # Retrieve stashed changes (if any were stashed)
+    # Stash any changes and force checkout the branch
+    print("Stashing untracked files...")
+    subprocess.run(["git", "stash", "-u"], cwd=repo_dir, check=True)  # -u to stash untracked files
+    print(f"Checking out branch '{branch}'...")
+    subprocess.run(["git", "checkout", "-B", branch, f"origin/{branch}"], cwd=repo_dir, check=True)
+    print("Popping stashed changes...")
     subprocess.run(["git", "stash", "pop"], cwd=repo_dir, check=True)
 
-    # Git add
+    # Add all the files
+    print("Adding new files to Git...")
     subprocess.run(["git", "add", "-f", "data/models/"], cwd=repo_dir, check=True)
     subprocess.run(["git", "add", "-f", "data/images/"], cwd=repo_dir, check=True)
     subprocess.run(["git", "add", "-f", "data/names.json"], cwd=repo_dir, check=True)
     subprocess.run(["git", "add", "-f", "data/index_to_label.json"], cwd=repo_dir, check=True)
     subprocess.run(["git", "add", "-f", "data/model_version.txt"], cwd=repo_dir, check=True)
 
-    # Git commit
+    # Commit the changes
     commit_message = f"Add new model version {model_version}"
+    print(f"Committing changes with message: '{commit_message}'")
     subprocess.run(["git", "commit", "-m", commit_message], cwd=repo_dir, check=True)
 
-    # Git push
+    # Push the changes
+    print(f"Pushing changes to branch '{branch}'...")
     subprocess.run(["git", "push", "-f", "origin", branch], cwd=repo_dir, check=True)
+    print(f"Successfully pushed changes to branch '{branch}'.")
 
 
 @server.post("/add_person")
 async def add_person(
         name: str = Form(...),
-        photos: List[UploadFile] = File(...)
-):
+        photos: List[UploadFile] = File(...)):
+    # Save photos
     images_dir = Path(DATA_DIR) / "images"
     images_dir.mkdir(parents=True, exist_ok=True)
 
@@ -154,7 +158,12 @@ async def add_person(
             f.write(await photo.read())
 
     # Train the model
+    print(f"Starting training for person '{name}'...")
     model_version = train_model()
+
+    # Ensure that model training is complete before continuing
+    if model_version == "0":
+        return {"error": "Model training failed or not completed properly."}
 
     # Add, commit, and push the new model
     branch_name = "new-model-updates"  # Specify the branch
