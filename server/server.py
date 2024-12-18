@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 from pathlib import Path
@@ -176,6 +177,69 @@ async def add_person(
             model_version = f.read().strip()
     else:
         model_version = "0"
+
+    # Update the names file
+    names_file = Path("../data/names.json")
+    if names_file.exists():
+        with open(names_file, "r") as f:
+            names = f.read()
+    else:
+        names = "{}"
+
+    # the format of the names file is a JSON object
+    # {
+    #     "name1": "label1",
+    #     "name2": "label2",
+    #     ...
+    # }
+
+    # Parse the JSON object
+    names_dict = json.loads(names)
+
+    # Add the new name to the dictionary
+    names_dict[name] = model_version
+
+    # Convert the dictionary back to a JSON object
+    names = json.dumps(names_dict)
+
+    # Write the updated names to the file
+    with open(names_file, "w") as f:
+        f.write(names)
+
+    # Update the index_to_label file
+    index_to_label_file = Path("../data/index_to_label.json")
+
+    if index_to_label_file.exists():
+        with open(index_to_label_file, "r") as f:
+            index_to_label = f.read()
+    else:
+        index_to_label = "{}"
+
+    # the format of the index_to_label file is a JSON object
+    # {
+    #    "0": "1",
+    #    "1": "2",
+    #    ...
+    # }
+
+    # Parse the JSON object
+    index_to_label_dict = json.loads(index_to_label)
+
+    last_index = -1
+    if index_to_label:
+        last_index = max(int(k) for k in index_to_label_dict.keys())
+
+    # Ajouter la nouvelle paire "last_index + 1": "last_index + 2"
+    index_to_label_dict[str(last_index + 1)] = last_index + 2
+
+    # Sauvegarder le fichier avec les données mises à jour
+    with open(index_to_label_file, "w") as f:
+        json.dump(index_to_label_dict, f, indent=4)
+
+    # Update the model version file
+    model_version_file = Path("../data/model_version.txt")
+    with open(model_version_file, "w") as f:
+        f.write(str(int(model_version) + 1))
 
     # Ensure that model training is complete before continuing
     if model_version == "0":
