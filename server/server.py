@@ -151,7 +151,7 @@ def git_add_commit_push(model_version: str, branch: str):
 
     # Push the changes
     print(f"Pushing changes to branch '{branch}'...")
-    subprocess.run(["git", "push", "origin", branch], cwd=repo_dir, check=True)
+    subprocess.run(["git", "push", "origin", f"{branch}:{branch}"], cwd=repo_dir, check=True)
     print(f"Successfully pushed changes to branch '{branch}'.")
 
 
