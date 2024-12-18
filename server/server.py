@@ -7,13 +7,14 @@ import os
 from pathlib import Path
 import subprocess
 
-
-
 server = FastAPI()
 
 DATA_DIR = os.getenv("DATA_DIR", "../data/")
 Path(DATA_DIR).mkdir(parents=True, exist_ok=True)
 
+from dotenv import load_dotenv
+
+load_dotenv()
 
 @server.get("/")
 def redirect_to_docs():
