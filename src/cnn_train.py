@@ -78,16 +78,9 @@ if __name__ == "__main__":
 
     y_train_indices = np.array([label_to_index[int(label)] for label in y_train])
 
-    with open("../data/index_to_label.json", "w") as f:
-        json.dump(index_to_label, f)
-
     model.train_model(X_train, y_train_indices, num_epochs=50, learning_rate=0.001)
 
     # The version of the model is the size of the "../data/models" directory
     model_version = len(os.listdir("../data/models")) + 1
 
     save_torch_model(model, model_version)
-
-    # Set the model version inside the "../data/model_version.txt" file
-    with open("../data/model_version.txt", "w") as f:
-        f.write(str(model_version))

@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 from typing import List
 import shutil
 
+from src.face_taker import logger
+
 server = FastAPI()
 
 DATA_DIR = os.getenv("DATA_DIR", "../data/")
@@ -122,9 +124,7 @@ def git_add_commit_push(model_version: str, branch: str):
     print("Adding new files to Git...")
     subprocess.run(["git", "add", "-f", "data/models/"], check=True)
     subprocess.run(["git", "add", "-f", "data/images/"], check=True)
-    subprocess.run(["git", "add", "-f", "data/names.json"], check=True)
-    subprocess.run(["git", "add", "-f", "data/index_to_label.json"], check=True)
-    subprocess.run(["git", "add", "-f", "data/model_version.txt"], check=True)
+    subprocess.run(["git", "add", "-f", "data/"], check=True)
 
     # Check the Git status to verify added files
     print("Checking Git status to verify staged changes...")
@@ -178,6 +178,8 @@ async def add_person(
     else:
         model_version = "0"
 
+    print("version :", model_version)
+
     # Update the names file
     names_file = Path("../data/names.json")
     if names_file.exists():
@@ -201,6 +203,8 @@ async def add_person(
 
     # Convert the dictionary back to a JSON object
     names = json.dumps(names_dict)
+
+    print("names :", names)
 
     # Write the updated names to the file
     with open(names_file, "w") as f:
@@ -231,6 +235,8 @@ async def add_person(
 
     # Ajouter la nouvelle paire "last_index + 1": "last_index + 2"
     index_to_label_dict[str(last_index + 1)] = last_index + 2
+
+    print("index_to_label_dict :", index_to_label_dict)
 
     # Sauvegarder le fichier avec les données mises à jour
     with open(index_to_label_file, "w") as f:
