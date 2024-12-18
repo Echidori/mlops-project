@@ -138,6 +138,14 @@ def git_add_commit_push(model_version: str, branch: str):
     # Change to the cloned repository directory
     os.chdir(repo_dir)
 
+    # Check the Git status to verify added files
+    print("Checking Git status to verify staged changes...")
+    result = subprocess.run(["git", "status"], check=True, cwd=repo_dir, capture_output=True, text=True)
+
+    # Print the output of git status
+    print("Git status output:")
+    print(result.stdout)
+
     # Add the copied files to Git
     print("Adding new files to Git...")
     subprocess.run(["git", "add", "-f", "data/models/"], check=True)
@@ -145,6 +153,14 @@ def git_add_commit_push(model_version: str, branch: str):
     subprocess.run(["git", "add", "-f", "data/names.json"], check=True)
     subprocess.run(["git", "add", "-f", "data/index_to_label.json"], check=True)
     subprocess.run(["git", "add", "-f", "data/model_version.txt"], check=True)
+
+    # Check the Git status to verify added files
+    print("Checking Git status to verify staged changes...")
+    result = subprocess.run(["git", "status"], check=True, cwd=repo_dir, capture_output=True, text=True)
+
+    # Print the output of git status
+    print("Git status output:")
+    print(result.stdout)
 
     # Commit the changes
     commit_message = f"Add new model version {model_version}"
