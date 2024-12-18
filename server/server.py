@@ -105,8 +105,22 @@ def git_add_commit_push(model_version: str, branch: str):
     if not os.path.exists(os.path.join(repo_dir, ".git")):
         subprocess.run(["git", "init"], cwd=repo_dir, check=True)
 
-    # Add the remote repository URL
-    subprocess.run(["git", "remote", "add", "origin", ssh_url], cwd=repo_dir, check=True)
+    # Add the remote repository URL if not already added
+    remotes = subprocess.run(["git", "remote"], cwd=repo_dir, capture_output=True, text=True, check=True)
+    if "origin" not in remotes.stdout:
+        subprocess.run(["git", "remote", "add", "origin", ssh_url], cwd=repo_dir, check=True)
+
+    # Fetch the remote branch if it exists
+    subprocess.run(["git", "fetch", "origin", branch], cwd=repo_dir, check=True)
+
+    # Check if the branch exists locally
+    local_branches = subprocess.run(["git", "branch"], cwd=repo_dir, capture_output=True, text=True, check=True)
+    if branch not in local_branches.stdout:
+        # If not, create and track the branch
+        subprocess.run(["git", "checkout", "-b", branch, f"origin/{branch}"], cwd=repo_dir, check=True)
+    else:
+        # If it exists, check it out
+        subprocess.run(["git", "checkout", branch], cwd=repo_dir, check=True)
 
     # Git add
     subprocess.run(["git", "add", "data/models/"], cwd=repo_dir, check=True)
