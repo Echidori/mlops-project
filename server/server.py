@@ -35,7 +35,7 @@ def get_model_version():
 def get_model():
     return {
         "version": get_model_version()["version"],
-        "model": "model"
+        "model": open(Path(DATA_DIR) / "model.pth", "rb").read()
     }
 
 @server.get("/get_names")
